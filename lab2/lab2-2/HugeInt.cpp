@@ -1,22 +1,19 @@
 #include "HugeInt.h"
 #include <iostream>
-
+#include <stdexcept>
 HugeInt::HugeInt(long a) : integer{ 0 }
 {
-
-
-	for (int i = 0; i < 30; ++i)
+	for (int i = 0; i < digit; ++i)
 	{
 		integer[i] = a % 10;
 		a /= 10;
 	}//从低位到高位储存数据,long 155->HugeInt [551000...]
-
 }
 
 HugeInt::HugeInt(const char* p) : integer{ 0 }
 {
 	size_t len = strlen(p);
-	for (int i = 0; i < 30 && *p != '\0'; ++i, ++p)
+	for (int i = 0; i < digit && *p != '\0'; ++i, ++p)
 	{
 		integer[len - 1 - i] = *p - '0';
 	}
@@ -26,7 +23,7 @@ HugeInt HugeInt::operator+(const HugeInt& n) const
 {
 	HugeInt temp;
 	int carry = 0;
-	for (int i = 0; i < 30; ++i)
+	for (int i = 0; i < digit; ++i)
 	{
 		int sum = integer[i] + n.integer[i] + carry;
 		temp.integer[i] = sum % 10;
@@ -49,9 +46,13 @@ HugeInt HugeInt::operator+(const char* num) const
 
 HugeInt HugeInt::operator-(const HugeInt& n)const
 {
+	if ((*this) < n)
+	{
+		throw std::invalid_argument("小数减大数");
+	}
 	HugeInt temp;
 	int borrow = 0;
-	for (int i = 0; i < 30; ++i)
+	for (int i = 0; i < digit; ++i)
 	{
 		int diff = integer[i] - n.integer[i] - borrow;
 		if (diff < 0)
@@ -77,10 +78,9 @@ HugeInt HugeInt::operator*(const HugeInt& n) const//记作a*b
 	{
 		short carry = 0;
 		for (size_t d2 = 0; d2 < slen; ++d2)//遍历被乘数b
-
 		{
-			short product = integer[d2] * n.integer[d1] + carry;
-			temp.integer[d1 + d2] += product % 10;
+			short product = integer[d2] * n.integer[d1] + carry + temp.integer[d1 + d2];
+			temp.integer[d1 + d2] = product % 10;
 			carry = product / 10;
 		}
 		temp.integer[d1 + slen] += carry;//b遍历后carry中可能有进位值但为加入temp.arr中
@@ -108,7 +108,7 @@ ______________________________________________
 	int nlen = n.getLength();
 	if (nlen == slen && nlen == 1) // 一位数乘一位数
 	{
-		return HugeInt(integer[29] * n.integer[29]);
+		return HugeInt(integer[digit - 1] * n.integer[digit - 1]);
 	}
 	else if (nlen == 1) // 多位数乘一位数
 	{
@@ -116,11 +116,11 @@ ______________________________________________
 		int carry = 0;
 		for (int i = 0; i < slen; ++i)
 		{
-			int sum = integer[29 - i] * n.integer[29] + carry;
-			temp.integer[29 - i] = sum % 10;
+			int sum = integer[digit - 1 - i] * n.integer[digit - 1] + carry;
+			temp.integer[digit - 1 - i] = sum % 10;
 			carry = sum / 10;
 		}
-		temp.integer[29 - slen] = carry;
+		temp.integer[digit - 1 - slen] = carry;
 		return temp;
 	}
 	else if (slen == 1) // 一位数乘多位数，优先使用上一方法
@@ -132,7 +132,7 @@ ______________________________________________
 		HugeInt sum(0L);
 		for (int i = 0; i < nlen; ++i)
 		{
-			HugeInt aInt = HugeInt(static_cast<long>(n.integer[29 - i]));
+			HugeInt aInt = HugeInt(static_cast<long>(n.integer[digit - 1 - i]));
 			HugeInt m = ((*this) * aInt);
 			HugeInt temp_multiply = m.shifter(i);
 			sum = sum + temp_multiply;
@@ -141,7 +141,6 @@ ______________________________________________
 	}
 #endif
 }
-
 
 HugeInt HugeInt::operator/(const HugeInt& n) const
 {
@@ -179,8 +178,8 @@ index:                   初始m=slen-nlen
 					   4 4 5 3 2
 					   3 9 4 4 0        ---...
 				  ______________________
-						 5 0 9 2 3
-						 4 7 3 2 8
+						   5 0 9 2 3
+						   4 7 3 2 8
 				  ______________________
 						   3 5 9 5 4
 						   3 1 5 5 2
@@ -203,7 +202,6 @@ index:                   初始m=slen-nlen
 					}
 					break;
 				}
-
 			}
 		}
 		return result;
@@ -212,24 +210,19 @@ index:                   初始m=slen-nlen
 
 int HugeInt::getLength() const
 {
-	for (int i = 29; i >= 0; --i)
+	for (int i = digit - 1; i >= 0; --i)
 	{
 		if (integer[i] != static_cast<short>(0))
 		{
 			return i + 1;
 		}
-
 	}
 	return 1;
 }
 
-
-
-
-
 bool HugeInt::operator==(const HugeInt& n)const
 {
-	for (int i = 0; i < 30; ++i)
+	for (int i = 0; i < digit; ++i)
 		if (integer[i] != n.integer[i])
 			return false;
 	return true;
@@ -242,7 +235,7 @@ bool HugeInt::operator!=(const HugeInt& n)const
 
 bool HugeInt::operator>(const HugeInt& n)const
 {
-	for (int i = 29; i >= 0; --i)
+	for (int i = digit - 1; i >= 0; --i)
 	{
 		if (integer[i] < n.integer[i])
 			return false;
@@ -289,7 +282,6 @@ void HugeInt::carry_unit()
 			integer[c] = integer[c] % 10;
 		}
 	}
-
 }
 
 bool HugeInt::isEmpty()const
@@ -303,5 +295,3 @@ ostream& operator<<(ostream& output, const HugeInt& num)
 		output << num.integer[i];
 	return output;
 }
-
-

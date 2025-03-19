@@ -4,6 +4,7 @@
 #include <iostream>
 using namespace std;
 int main()
+try
 {
 	char num[30] = "99999999999999999999999999999";//29char + 1'/0'
 	HugeInt n1(7654321L);
@@ -18,7 +19,8 @@ int main()
 	cout << "n5 is " << n5 << endl;
 	HugeInt n6(7888L);
 	cout << "n6 is " << n6 << endl;
-	cout << "result is 0\n\n";//??????????????????????????????????
+	HugeInt result;
+	cout << "result is" << result << endl << endl;
 
 	cout << (n1 != n2 ? "n1 is not equal to n2\n" : "");
 	cout << (n1 < n2 ? "n1 is less than n2\n" : "");
@@ -27,8 +29,12 @@ int main()
 	cout << n3 << " + " << n4 << "\n = " << n3 + n4 << endl << endl;
 	cout << n1 << " + " << HugeInt(9L) << " = " << n1 + HugeInt(9L) << endl;
 	cout << n2 << " + " << HugeInt(10000L) << " = " << n2 + HugeInt(10000L) << endl;
-	cout << n5 << " * " << n6 << " = " << n5 * n6 << endl;
+	cout << n5 << " * " << n6 << " = " << n6 * n5 << endl;
 	cout << n5 << " - " << n6 << " = " << n5 - n6 << endl;
 	cout << n5 << " / " << n6 << " = " << n5 / n6 << endl;
+}
+catch (invalid_argument& e)
+{
+	cout << e.what() << endl;
 }
 
